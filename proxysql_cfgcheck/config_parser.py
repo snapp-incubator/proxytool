@@ -23,7 +23,7 @@ class ConfigSyntaxError(RuntimeError):
 
 
 class Tokenizer:
-    SYMBOLS = {"=", ",", "{", "}", "(", ")"}
+    SYMBOLS = {"=", ",", ";", "{", "}", "(", ")"}
 
     def __init__(self, text: str) -> None:
         self.text = text
@@ -165,6 +165,7 @@ class _Parser:
             self._consume("=")
             value = self._parse_value()
             config[key.value] = value
+            self._consume_optional_setting_terminator()
         return config
 
     def _parse_value(self) -> Any:
@@ -195,7 +196,7 @@ class _Parser:
             key = self._consume("IDENT")
             self._consume("=")
             data[key.value] = self._parse_value()
-            self._consume_optional_separator(stop_token="}")
+            self._consume_optional_setting_terminator()
         self._consume("}")
         return data
 
@@ -212,6 +213,11 @@ class _Parser:
             return
         if self._match(","):
             return
+
+    def _consume_optional_setting_terminator(self) -> None:
+        if self._match(";"):
+            return
+        self._match(",")
 
     def _match(self, kind: str) -> bool:
         if self._check(kind):
